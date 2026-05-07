@@ -15,37 +15,65 @@
   </mat-card-header>
   <mat-card-content>
     <form [formGroup]="form" class="grid" (ngSubmit)="submit()">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>CPF/CNPJ</mat-label>
-        <input matInput formControlName="cpfCnpj" />
+        <input matInput formControlName="cpfCnpj" maxlength="18" autocomplete="off" />
+        <mat-hint align="end">11 ou 14 dígitos</mat-hint>
+        @if (fieldError('cpfCnpj'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
-      <mat-form-field appearance="outline" class="span2">
+      <mat-form-field appearance="outline" class="span2" subscriptSizing="dynamic">
         <mat-label>Número</mat-label>
-        <input matInput formControlName="number" autocomplete="cc-number" />
+        <input matInput formControlName="number" maxlength="23" autocomplete="cc-number" inputmode="numeric" />
+        <mat-hint align="end">13 a 19 dígitos, algoritmo de Luhn</mat-hint>
+        @if (fieldError('number'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Nome impresso</mat-label>
-        <input matInput formControlName="holder" />
+        <input matInput formControlName="holder" maxlength="80" autocomplete="cc-name" />
+        @if (fieldError('holder'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Validade (MMYY)</mat-label>
-        <input matInput formControlName="expiry" />
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Validade</mat-label>
+        <input matInput formControlName="expiry" maxlength="9" placeholder="MMYY ou MM/AA" inputmode="numeric" />
+        <mat-hint align="end">Mês 01–12, não vencido</mat-hint>
+        @if (fieldError('expiry'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>CVC</mat-label>
-        <input matInput type="password" formControlName="cvc" autocomplete="cc-csc" />
+        <input matInput type="password" formControlName="cvc" maxlength="4" autocomplete="cc-csc" inputmode="numeric" />
+        <mat-hint align="end">3 dígitos; Amex 4</mat-hint>
+        @if (fieldError('cvc'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
-      <mat-form-field appearance="outline" class="span2">
+      <mat-form-field appearance="outline" class="span2" subscriptSizing="dynamic">
         <mat-label>Apelido (opcional)</mat-label>
-        <input matInput formControlName="label" />
+        <input matInput formControlName="label" maxlength="80" />
+        @if (fieldError('label'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>E-mail</mat-label>
-        <input matInput type="email" formControlName="email" />
+        <input matInput type="email" formControlName="email" autocomplete="email" />
+        @if (fieldError('email'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Celular</mat-label>
-        <input matInput formControlName="cellphone" />
+        <input matInput formControlName="cellphone" maxlength="16" inputmode="tel" autocomplete="tel" />
+        @if (fieldError('cellphone'); as err) {
+          <mat-error>{{ err }}</mat-error>
+        }
       </mat-form-field>
       <div class="actions">
         <button mat-stroked-button type="button" color="primary" routerLink="/cards">Cancelar</button>
