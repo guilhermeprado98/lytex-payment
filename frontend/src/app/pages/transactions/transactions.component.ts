@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, ViewChild, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
+import { AfterViewInit, Component, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,7 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { finalize } from 'rxjs';
+import { catchError, finalize, of, switchMap } from 'rxjs';
 import { ChargesApiService } from '../../charges/charges-api.service';
 import type { Charge } from '../../charges/charge.model';
 import { pickBoletoLine, pickPixPayload } from '../../charges/charge.model';
@@ -52,6 +52,7 @@ export class TransactionsComponent implements AfterViewInit {
 
   readonly dataSource = new MatTableDataSource<Charge>([]);
   readonly displayed: string[] = ['createdAt', 'amount', 'method', 'status', 'actions'];
+  readonly syncing = signal(false);
 
   readonly savedCards = signal<SavedCard[]>([]);
   readonly paying = signal(false);
@@ -75,7 +76,7 @@ export class TransactionsComponent implements AfterViewInit {
   });
 
   constructor() {
-    this.reload();
+    this.loadFromLytexThenList();
     this.reloadSavedCards();
 
     this.cardForm.get('savedCardId')?.valueChanges.subscribe((id) => {
@@ -143,6 +144,32 @@ export class TransactionsComponent implements AfterViewInit {
       },
       error: () => this.snack.open('Não foi possível carregar transações', 'Fechar'),
     });
+  }
+
+  /** GET /v2/invoices na Lytex (via API) e depois lista local. */
+  loadFromLytexThenList(): void {
+    this.syncing.set(true);
+    const f = this.filterForm.getRawValue();
+    const q: { status?: string; method?: string } = {};
+    if (f.status) {
+      q.status = f.status;
+    }
+    if (f.method) {
+      q.method = f.method;
+    }
+    this.api
+      .syncFromLytex()
+      .pipe(
+        catchError(() => of(null)),
+        finalize(() => this.syncing.set(false)),
+        switchMap(() => this.api.list(Object.keys(q).length ? q : undefined)),
+      )
+      .subscribe({
+        next: (rows) => {
+          this.dataSource.data = rows;
+        },
+        error: () => this.snack.open('Não foi possível carregar transações', 'Fechar'),
+      });
   }
 
   reloadSavedCards(): void {

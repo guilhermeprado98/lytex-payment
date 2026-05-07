@@ -17,7 +17,7 @@
     <form [formGroup]="form" class="grid" (ngSubmit)="submit()">
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>CPF/CNPJ</mat-label>
-        <input matInput formControlName="cpfCnpj" maxlength="18" autocomplete="off" />
+        <input matInput formControlName="cpfCnpj" maxlength="18" autocomplete="off" (input)="onCpfCnpjInput($event)" />
         <mat-hint align="end">11 ou 14 dígitos</mat-hint>
         @if (fieldError('cpfCnpj'); as err) {
           <mat-error>{{ err }}</mat-error>
@@ -40,8 +40,15 @@
       </mat-form-field>
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Validade</mat-label>
-        <input matInput formControlName="expiry" maxlength="9" placeholder="MMYY ou MM/AA" inputmode="numeric" />
-        <mat-hint align="end">Mês 01–12, não vencido</mat-hint>
+        <input
+          matInput
+          formControlName="expiry"
+          maxlength="7"
+          placeholder="MM/AA ou MM/AAAA"
+          inputmode="numeric"
+          (input)="onExpiryInput($event)"
+        />
+        <mat-hint align="end">4 ou 6 dígitos; mês 01–12, não vencido</mat-hint>
         @if (fieldError('expiry'); as err) {
           <mat-error>{{ err }}</mat-error>
         }

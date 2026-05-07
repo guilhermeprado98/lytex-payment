@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ChargesService } from './charges.service';
@@ -22,6 +22,16 @@ export class ChargesController {
   @Get()
   list(@CurrentUser('userId') userId: string, @Query() query: ListChargesQueryDto) {
     return this.charges.listByUser(userId, query);
+  }
+
+  @Post('sync-from-lytex')
+  @ApiOperation({
+    summary: 'Sincronizar faturas Lytex',
+    description:
+      'Chama GET https://…/v2/invoices (todas as páginas), grava/atualiza cobranças locais e alimenta dashboard/transações.',
+  })
+  syncFromLytex(@CurrentUser('userId') userId: string) {
+    return this.charges.syncFromLytex(userId);
   }
 
   @Patch(':id/pay')

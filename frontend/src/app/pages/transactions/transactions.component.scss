@@ -20,6 +20,19 @@
   vertical-align: middle;
 }
 
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.sync-btn mat-icon,
+.sync-btn mat-spinner {
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
 .filters-wrap {
   margin-bottom: 1.35rem;
   padding: 1.15rem 1.25rem 1.25rem;

@@ -32,7 +32,7 @@ async function bootstrap() {
   await app.listen(port);
   const logFormat = process.env.LOG_FORMAT ?? 'text';
   new Logger('Bootstrap').log(
-    `http://localhost:${port} | Swagger /docs | HTTP logs [HTTP] | LOG_FORMAT=${logFormat} | LOG_TO_DB=${process.env.LOG_TO_DB ?? 'true'}`,
+    `http://localhost:${port} | Swagger /docs | POST /saved-cards (JWT) | HTTP [HTTP] | LOG_FORMAT=${logFormat} | LOG_TO_DB=${process.env.LOG_TO_DB ?? 'true'} — 404 em /saved-cards: recompile/reinicie o API nesta porta.`,
   );
 }
 bootstrap();

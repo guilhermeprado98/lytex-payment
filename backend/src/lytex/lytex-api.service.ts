@@ -6,6 +6,20 @@ import { AxiosError } from 'axios';
 
 export type PaymentMethodKind = 'PIX' | 'BOLETO' | 'CREDIT_CARD';
 
+/** Dados do pagador em POST /v2/invoices; preenchimento parcial com fallback em variáveis LYTEX_INVOICE_* */
+export type LytexInvoicePayerInput = {
+  cpfCnpj?: string;
+  name?: string;
+  email?: string;
+  cellphone?: string;
+  zip?: string;
+  city?: string;
+  street?: string;
+  state?: string;
+  zone?: string;
+  treatmentPronoun?: string;
+};
+
 @Injectable()
 export class LytexApiService {
   private readonly logger = new Logger(LytexApiService.name);
@@ -78,15 +92,20 @@ export class LytexApiService {
     }
   }
 
+  /**
+   * Cria fatura na Lytex (POST /v2/invoices), fluxo compatível com PIX/boleto/cartão.
+   * Valores em centavos nos itens, como na documentação/exemplos oficiais.
+   */
   async createPaymentLink(params: {
-    totalValueCents: number;
+    amountReais: number;
     description: string;
-    website: string;
     method: PaymentMethodKind;
+    parcels?: number;
+    payer?: LytexInvoicePayerInput;
   }): Promise<Record<string, unknown>> {
     const token = await this.obtainToken();
-    const url = `${this.baseUrl()}/payment_links`;
-    const body = this.buildPaymentLinkBody(params);
+    const url = `${this.baseUrl()}/invoices`;
+    const body = this.buildInvoiceBody(params);
     try {
       const { data } = await firstValueFrom(
         this.http.post<Record<string, unknown>>(url, body, {
@@ -95,8 +114,51 @@ export class LytexApiService {
       );
       return data;
     } catch (e) {
-      throw this.mapAxios(e, 'Falha ao criar link de pagamento na Lytex');
+      throw this.mapAxios(e, 'Falha ao criar fatura na Lytex');
     }
+  }
+
+  /** GET /v2/invoices — uma página (results + paginate). */
+  async listInvoicesPage(
+    page = 1,
+    perPage = 100,
+  ): Promise<{
+    results: Record<string, unknown>[];
+    paginate?: { page: number; pages: number; perPage: number; total: number };
+  }> {
+    const token = await this.obtainToken();
+    const url = `${this.baseUrl()}/invoices`;
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<Record<string, unknown>>(url, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { page, perPage },
+        }),
+      );
+      const raw = data['results'];
+      const results = Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+      const paginate = data['paginate'] as
+        | { page: number; pages: number; perPage: number; total: number }
+        | undefined;
+      return { results, paginate };
+    } catch (e) {
+      throw this.mapAxios(e, 'Falha ao listar faturas na Lytex');
+    }
+  }
+
+  /** Percorre todas as páginas e retorna faturas + quantidade de páginas lidas. */
+  async listAllInvoices(perPage = 100): Promise<{
+    invoices: Record<string, unknown>[];
+    pagesFetched: number;
+  }> {
+    const first = await this.listInvoicesPage(1, perPage);
+    const out = [...first.results];
+    const pages = Math.max(1, Math.floor(first.paginate?.pages ?? 1));
+    for (let p = 2; p <= pages; p++) {
+      const next = await this.listInvoicesPage(p, perPage);
+      out.push(...next.results);
+    }
+    return { invoices: out, pagesFetched: pages };
   }
 
   async createCardToken(body: {
@@ -148,46 +210,135 @@ export class LytexApiService {
     }
   }
 
-  private buildPaymentLinkBody(params: {
-    totalValueCents: number;
+  private buildInvoiceBody(params: {
+    amountReais: number;
     description: string;
-    website: string;
     method: PaymentMethodKind;
+    parcels?: number;
+    payer?: LytexInvoicePayerInput;
   }): Record<string, unknown> {
-    const { totalValueCents, description, website, method } = params;
-    const paymentMethods: Record<string, unknown> = {
-      pix: { enable: method === 'PIX' },
-      boleto: { enable: method === 'BOLETO' },
-      creditCard: {
-        enable: method === 'CREDIT_CARD',
-        maxParcels: 12,
-        isRatesToPayer: false,
+    const { amountReais, description, method } = params;
+    const parcels = Math.min(12, Math.max(1, Math.floor(params.parcels ?? 1)));
+    const valueCents = Math.round(amountReais * 100);
+    if (valueCents < 1) {
+      throw new BadRequestException('Valor inválido para fatura');
+    }
+    const itemName = description.slice(0, 200) || 'Cobrança';
+    const dueDays = Math.min(
+      365,
+      Math.max(
+        1,
+        Math.floor(Number(this.config.get<string>('LYTEX_INVOICE_DUE_DAYS') ?? '7') || 7),
+      ),
+    );
+
+    const creditCard: Record<string, unknown> =
+      method === 'CREDIT_CARD'
+        ? { enable: true, maxParcels: parcels, isRatesToPayer: false }
+        : { enable: false };
+
+    return {
+      client: this.buildInvoiceClient(params.payer),
+      items: [{ name: itemName, quantity: 1, value: valueCents }],
+      dueDate: this.invoiceDueDateEndOfUtcDay(dueDays),
+      paymentMethods: {
+        pix: { enable: method === 'PIX' },
+        boleto: { enable: method === 'BOLETO' },
+        creditCard,
       },
     };
+  }
+
+  /** Mesmo formato do exemplo Lytex: fim do dia em UTC (23:59:59.999Z). */
+  private invoiceDueDateEndOfUtcDay(daysFromToday: number): string {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + daysFromToday);
+    d.setUTCHours(23, 59, 59, 999);
+    return d.toISOString();
+  }
+
+  private buildInvoiceClient(payer?: LytexInvoicePayerInput): Record<string, unknown> {
+    const fromDto = payer?.cpfCnpj?.replace(/\D/g, '') ?? '';
+    const fromEnv =
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_CPF_CNPJ')?.replace(/\D/g, '') ?? '';
+    const cpfCnpj = fromDto || fromEnv;
+    if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
+      throw new BadRequestException(
+        'Informe o CPF/CNPJ do pagador no corpo da cobrança (payerCpfCnpj) ou configure LYTEX_INVOICE_CLIENT_CPF_CNPJ no .env (11 ou 14 dígitos).',
+      );
+    }
+    const type = cpfCnpj.length === 14 ? 'pj' : 'pf';
+    const name =
+      payer?.name?.trim() ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_NAME')?.trim() ||
+      'Pagador Sandbox';
+    const email =
+      payer?.email?.trim() ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_EMAIL')?.trim() ||
+      'pagador@exemplo.com';
+    const cellphone =
+      payer?.cellphone?.replace(/\D/g, '') ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_CELLPHONE')?.replace(/\D/g, '') ||
+      '11999999999';
+    const pronoun =
+      payer?.treatmentPronoun?.trim() ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_TREATMENT_PRONOUN')?.trim() ||
+      'you';
+    const zip =
+      payer?.zip?.replace(/\D/g, '') ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_ZIP')?.replace(/\D/g, '') ||
+      '01310100';
+    const city =
+      payer?.city?.trim() ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_CITY')?.trim() ||
+      'São Paulo';
+    const street =
+      payer?.street?.trim() ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_STREET')?.trim() ||
+      'Rua Exemplo';
+    const state =
+      payer?.state?.trim() ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_STATE')?.trim() ||
+      'SP';
+    const zone =
+      payer?.zone?.trim() ||
+      this.config.get<string>('LYTEX_INVOICE_CLIENT_ZONE')?.trim() ||
+      'Centro';
+
     return {
-      paymentType: 'invoice',
-      description,
-      website,
-      totalValue: totalValueCents,
-      items: [
-        {
-          _productId: 'lytex-payment-app',
-          name: description.slice(0, 120) || 'Cobrança',
-          quantity: 1,
-          value: totalValueCents,
-        },
-      ],
-      paymentMethods,
-      observation: description,
+      treatmentPronoun: pronoun,
+      name,
+      type,
+      cpfCnpj,
+      email,
+      cellphone,
+      address: { zip, city, street, state, zone },
     };
   }
 
   private mapAxios(err: unknown, fallback: string): BadRequestException {
     if (err instanceof AxiosError) {
-      const msg =
-        (err.response?.data as { message?: string })?.message ||
-        (typeof err.response?.data === 'string' ? err.response.data : JSON.stringify(err.response?.data)) ||
-        err.message;
+      const data = err.response?.data;
+      let msg: string | undefined;
+      if (typeof data === 'string') {
+        msg = data;
+      } else if (data && typeof data === 'object') {
+        const o = data as Record<string, unknown>;
+        msg =
+          (typeof o['message'] === 'string' && o['message']) ||
+          (typeof o['error'] === 'string' && o['error']) ||
+          (typeof o['msg'] === 'string' && o['msg']) ||
+          undefined;
+        if (!msg && Array.isArray(o['errors'])) {
+          msg = JSON.stringify(o['errors']);
+        }
+        if (!msg) {
+          msg = JSON.stringify(data);
+        }
+      }
+      if (!msg) {
+        msg = err.message;
+      }
       return new BadRequestException(`${fallback}: ${msg}`);
     }
     return new BadRequestException(fallback);

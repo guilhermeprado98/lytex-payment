@@ -4,14 +4,9 @@ import { Charge, ChargeSchema } from './schemas/charge.schema';
 import { ChargesService } from './charges.service';
 import { ChargesController } from './charges.controller';
 import { LytexModule } from '../lytex/lytex.module';
-import { SavedCardsModule } from '../saved-cards/saved-cards.module';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Charge.name, schema: ChargeSchema }]),
-    LytexModule,
-    SavedCardsModule,
-  ],
+  imports: [MongooseModule.forFeature([{ name: Charge.name, schema: ChargeSchema }]), LytexModule],
   controllers: [ChargesController],
   providers: [ChargesService],
   exports: [ChargesService],

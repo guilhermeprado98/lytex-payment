@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -12,6 +12,19 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { finalize } from 'rxjs';
 import { ChargesApiService } from '../../charges/charges-api.service';
 import { SavedCardsApiService, type SavedCard } from '../../saved-cards/saved-cards-api.service';
+
+function cpfCnpjValidator(c: AbstractControl): ValidationErrors | null {
+  const d = String(c.value ?? '').replace(/\D/g, '');
+  if (!d.length) return { required: true };
+  if (d.length !== 11 && d.length !== 14) return { cpfCnpj: true };
+  return null;
+}
+
+function emailOptional(c: AbstractControl): ValidationErrors | null {
+  const s = String(c.value ?? '').trim();
+  if (!s.length) return null;
+  return Validators.email(c);
+}
 
 @Component({
   selector: 'app-charge-create',
@@ -45,6 +58,10 @@ export class ChargeCreateComponent {
     amount: [10, [Validators.required, Validators.min(0.01)]],
     method: ['PIX' as 'PIX' | 'BOLETO' | 'CREDIT_CARD', Validators.required],
     description: ['Cobrança sandbox'],
+    payerCpfCnpj: ['', cpfCnpjValidator],
+    payerName: [''],
+    payerEmail: ['', emailOptional],
+    payerCellphone: [''],
     savedCardId: [''],
     parcels: [1, [Validators.required, Validators.min(1), Validators.max(12)]],
   });
@@ -107,11 +124,22 @@ export class ChargeCreateComponent {
       description?: string;
       savedCardId?: string;
       parcels?: number;
+      payerCpfCnpj: string;
+      payerName?: string;
+      payerEmail?: string;
+      payerCellphone?: string;
     } = {
       amount: Number(v.amount),
       method: v.method,
       description: v.description || undefined,
+      payerCpfCnpj: String(v.payerCpfCnpj).replace(/\D/g, ''),
     };
+    const name = v.payerName?.trim();
+    if (name) body.payerName = name;
+    const email = v.payerEmail?.trim();
+    if (email) body.payerEmail = email;
+    const cell = v.payerCellphone?.replace(/\D/g, '');
+    if (cell && cell.length >= 10) body.payerCellphone = cell;
     if (v.method === 'CREDIT_CARD') {
       body.savedCardId = v.savedCardId;
       body.parcels = Number(v.parcels) || 1;

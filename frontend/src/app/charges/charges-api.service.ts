@@ -4,6 +4,13 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { Charge } from './charge.model';
 
+export type SyncFromLytexResult = {
+  synced: number;
+  skipped: number;
+  pagesFetched: number;
+  totalRemote: number;
+};
+
 export type PayCardBody =
   | {
       savedCardId: string;
@@ -27,6 +34,10 @@ export class ChargesApiService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/charges`;
 
+  syncFromLytex(): Observable<SyncFromLytexResult> {
+    return this.http.post<SyncFromLytexResult>(`${this.base}/sync-from-lytex`, {});
+  }
+
   list(filters?: { status?: string; method?: string }): Observable<Charge[]> {
     let params = new HttpParams();
     if (filters?.status) {
@@ -44,6 +55,10 @@ export class ChargesApiService {
     description?: string;
     savedCardId?: string;
     parcels?: number;
+    payerCpfCnpj: string;
+    payerName?: string;
+    payerEmail?: string;
+    payerCellphone?: string;
   }): Observable<Charge> {
     return this.http.post<Charge>(this.base, body);
   }

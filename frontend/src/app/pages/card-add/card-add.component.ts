@@ -20,6 +20,7 @@ import {
   optionalBrCellphoneValidator,
   optionalEmailValidator,
 } from '../../shared/validators/card.validators';
+import { formatCpfCnpjDigits, formatExpiryDigits } from '../../shared/format/cpf-cnpj-expiry.format';
 
 @Component({
   selector: 'app-card-add',
@@ -60,6 +61,26 @@ export class CardAddComponent {
     this.form.controls.number.valueChanges.subscribe(() => {
       this.form.controls.cvc.updateValueAndValidity({ emitEvent: false });
     });
+  }
+
+  onCpfCnpjInput(ev: Event): void {
+    const el = ev.target as HTMLInputElement;
+    const formatted = formatCpfCnpjDigits(el.value);
+    const ctrl = this.form.controls.cpfCnpj;
+    ctrl.setValue(formatted, { emitEvent: false });
+    ctrl.updateValueAndValidity();
+    const len = formatted.length;
+    queueMicrotask(() => el.setSelectionRange(len, len));
+  }
+
+  onExpiryInput(ev: Event): void {
+    const el = ev.target as HTMLInputElement;
+    const formatted = formatExpiryDigits(el.value);
+    const ctrl = this.form.controls.expiry;
+    ctrl.setValue(formatted, { emitEvent: false });
+    ctrl.updateValueAndValidity();
+    const len = formatted.length;
+    queueMicrotask(() => el.setSelectionRange(len, len));
   }
 
   fieldError(controlName: string): string | null {

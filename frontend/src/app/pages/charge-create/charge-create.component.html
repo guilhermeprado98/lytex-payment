@@ -5,7 +5,7 @@
       Voltar às transações
     </a>
     <h1>Nova cobrança</h1>
-    <p class="lead">Integração sandbox Lytex (payment links e cartão).</p>
+    <p class="lead">Integração sandbox Lytex (POST /v2/invoices e cartão).</p>
   </div>
 </div>
 
@@ -27,6 +27,32 @@
       <mat-form-field appearance="outline" class="field grow" subscriptSizing="dynamic">
         <mat-label>Descrição</mat-label>
         <input matInput formControlName="description" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field grow" subscriptSizing="dynamic">
+        <mat-label>CPF/CNPJ do pagador</mat-label>
+        <input matInput formControlName="payerCpfCnpj" placeholder="Somente números ou com pontuação" autocomplete="off" />
+        @if (form.controls.payerCpfCnpj.touched && form.controls.payerCpfCnpj.errors?.['required']) {
+          <mat-error>Informe o CPF ou CNPJ</mat-error>
+        }
+        @if (form.controls.payerCpfCnpj.touched && form.controls.payerCpfCnpj.errors?.['cpfCnpj']) {
+          <mat-error>Use 11 dígitos (CPF) ou 14 (CNPJ)</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field grow" subscriptSizing="dynamic">
+        <mat-label>Nome do pagador (opcional)</mat-label>
+        <input matInput formControlName="payerName" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+        <mat-label>E-mail (opcional)</mat-label>
+        <input matInput type="email" formControlName="payerEmail" />
+        @if (form.controls.payerEmail.touched && form.controls.payerEmail.errors?.['email']) {
+          <mat-error>E-mail inválido</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+        <mat-label>Celular (opcional)</mat-label>
+        <input matInput formControlName="payerCellphone" placeholder="DDD + número" />
       </mat-form-field>
 
       @if (form.controls.method.value === 'CREDIT_CARD') {

@@ -7,34 +7,49 @@ import { Charge, ChargeDocument, ChargeStatus, PaymentMethod } from './schemas/c
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { ListChargesQueryDto } from './dto/list-charges-query.dto';
 import { PayCardDto } from './dto/pay-card.dto';
-import { ConfigService } from '@nestjs/config';
 import { extractCardTokenId, extractLytexIds } from '../common/utils/lytex-response.util';
+import {
+  amountReaisFromLytexInvoice,
+  lytexInvoiceStatusToChargeStatus,
+  paymentMethodFromLytexInvoice,
+  paymentUrlFromLytexInvoice,
+} from './lytex-invoice.mapper';
 
 @Injectable()
 export class ChargesService {
   constructor(
     @InjectModel(Charge.name) private readonly chargeModel: Model<ChargeDocument>,
     private readonly lytex: LytexApiService,
-    private readonly config: ConfigService,
     private readonly savedCards: SavedCardsService,
   ) {}
 
   async create(userId: string, dto: CreateChargeDto) {
-    const totalValueCents = Math.round(dto.amount * 100);
-    if (totalValueCents < 1) {
+    const amountReais = Math.round(dto.amount * 100) / 100;
+    if (amountReais < 0.01) {
       throw new BadRequestException('Valor inválido');
     }
     if (dto.method === PaymentMethod.CREDIT_CARD && !dto.savedCardId?.trim()) {
       throw new BadRequestException('Selecione um cartão salvo para cobrança com cartão.');
     }
-    const website = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4200';
     const description = dto.description?.trim() || 'Cobrança via app';
 
     const lytexData = await this.lytex.createPaymentLink({
-      totalValueCents,
+      amountReais,
       description,
-      website,
       method: dto.method as 'PIX' | 'BOLETO' | 'CREDIT_CARD',
+      parcels: dto.parcels ?? 1,
+      payer: {
+        cpfCnpj: dto.payerCpfCnpj,
+        name: dto.payerName,
+        email: dto.payerEmail,
+        cellphone: dto.payerCellphone,
+        zip: dto.payerZip,
+        city: dto.payerCity,
+        street: dto.payerStreet,
+        state: dto.payerState,
+        zone: dto.payerZone,
+        treatmentPronoun: dto.payerTreatmentPronoun,
+      },
     });
 
     const ids = extractLytexIds(lytexData);
@@ -69,6 +84,57 @@ export class ChargesService {
       filter['method'] = query.method;
     }
     return this.chargeModel.find(filter).sort({ createdAt: -1 }).lean().exec();
+  }
+
+  /**
+   * GET /v2/invoices na Lytex (todas as páginas) e upsert em Charge para o usuário atual.
+   * Dashboard e lista de transações passam a refletir os mesmos dados persistidos.
+   */
+  async syncFromLytex(userId: string): Promise<{
+    synced: number;
+    skipped: number;
+    pagesFetched: number;
+    totalRemote: number;
+  }> {
+    const { invoices, pagesFetched } = await this.lytex.listAllInvoices();
+    const oid = new Types.ObjectId(userId);
+    let synced = 0;
+    let skipped = 0;
+    for (const inv of invoices) {
+      const id = typeof inv['_id'] === 'string' ? inv['_id'] : undefined;
+      if (!id) {
+        skipped++;
+        continue;
+      }
+      const amount = amountReaisFromLytexInvoice(inv as Record<string, unknown>);
+      if (amount <= 0) {
+        skipped++;
+        continue;
+      }
+      const row = inv as Record<string, unknown>;
+      await this.chargeModel.findOneAndUpdate(
+        { createdBy: oid, lytexInvoiceId: id },
+        {
+          $set: {
+            amount,
+            method: paymentMethodFromLytexInvoice(row),
+            status: lytexInvoiceStatusToChargeStatus(row['status']),
+            paymentUrl: paymentUrlFromLytexInvoice(row),
+            externalId: id,
+            lytex: row,
+          },
+          $setOnInsert: { createdBy: oid },
+        },
+        { upsert: true, new: true },
+      );
+      synced++;
+    }
+    return {
+      synced,
+      skipped,
+      pagesFetched,
+      totalRemote: invoices.length,
+    };
   }
 
   async simulatePay(userId: string, id: string) {

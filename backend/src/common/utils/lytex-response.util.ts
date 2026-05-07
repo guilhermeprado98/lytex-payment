@@ -31,18 +31,21 @@ export function extractLytexIds(data: Record<string, unknown>): {
   paymentUrl?: string;
   lytexInvoiceId?: string;
 } {
+  const rootId = asId(data['_id']) || asId(data['id']);
   const externalId =
-    asId(data['_id']) ||
-    asId(data['id']) ||
-    pickString(data, ['referenceId', 'paymentLinkId']);
+    rootId || pickString(data, ['referenceId', 'paymentLinkId']);
 
   const paymentUrl = pickString(data, [
+    'linkCheckout',
+    'linkBoleto',
     'url',
     'paymentUrl',
     'link',
     'shortUrl',
     'checkoutUrl',
     'publicUrl',
+    'payUrl',
+    'invoiceUrl',
   ]);
 
   const inv =
@@ -51,7 +54,8 @@ export function extractLytexIds(data: Record<string, unknown>): {
     dig(data, ['_invoice', '_id']) ??
     dig(data, ['data', '_invoiceId']);
 
-  const lytexInvoiceId = asId(inv) || pickString(data, ['_invoiceId', 'invoiceId']);
+  const lytexInvoiceId =
+    asId(inv) || pickString(data, ['_invoiceId', 'invoiceId']) || rootId;
 
   return {
     externalId,

@@ -5,7 +5,6 @@ import { ChargesService } from './charges.service';
 import { LytexApiService } from '../lytex/lytex-api.service';
 import { SavedCardsService } from '../saved-cards/saved-cards.service';
 import { Charge, ChargeStatus, PaymentMethod } from './schemas/charge.schema';
-import { ConfigService } from '@nestjs/config';
 
 describe('ChargesService', () => {
   let service: ChargesService;
@@ -14,18 +13,17 @@ describe('ChargesService', () => {
     findOne: jest.fn(),
     find: jest.fn(),
   };
-  const lytex = { createPaymentLink: jest.fn(), createCardToken: jest.fn(), payInvoice: jest.fn() };
-  const config = { get: jest.fn().mockReturnValue('http://localhost:4200') };
+  const lytex = { createPaymentLink: jest.fn(), createCardToken: jest.fn(), payInvoice: jest.fn(), listAllInvoices: jest.fn() };
   const savedCards = { getOwnedForPay: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    lytex.listAllInvoices.mockResolvedValue({ invoices: [], pagesFetched: 0 });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChargesService,
         { provide: getModelToken(Charge.name), useValue: model },
         { provide: LytexApiService, useValue: lytex },
-        { provide: ConfigService, useValue: config },
         { provide: SavedCardsService, useValue: savedCards },
       ],
     }).compile();

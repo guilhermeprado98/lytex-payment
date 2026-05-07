@@ -1,12 +1,28 @@
 <div class="page-head page-head-actions">
   <div class="titles">
     <h1>Transações</h1>
-    <p class="lead">Filtre o histórico e use as ações em cada linha (PIX, boleto ou cartão).</p>
   </div>
-  <a mat-flat-button color="primary" routerLink="/transactions/new" class="add-btn">
-    <mat-icon>add</mat-icon>
-    Nova cobrança
-  </a>
+  <div class="head-actions">
+    <a mat-flat-button color="primary" routerLink="/transactions/new" class="add-btn">
+      <mat-icon>add</mat-icon>
+      Nova cobrança
+    </a>
+    <button
+      mat-stroked-button
+      color="primary"
+      type="button"
+      class="sync-btn"
+      [disabled]="syncing()"
+      (click)="loadFromLytexThenList()"
+    >
+      @if (syncing()) {
+        <mat-spinner diameter="20" />
+      } @else {
+        <mat-icon>sync</mat-icon>
+      }
+      Atualizar da Lytex
+    </button>
+  </div>
 </div>
 
 <section class="filters-wrap" aria-label="Filtros">
