@@ -51,9 +51,7 @@ export function extractLytexIds(data: Record<string, unknown>): {
     dig(data, ['_invoice', '_id']) ??
     dig(data, ['data', '_invoiceId']);
 
-  const lytexInvoiceId =
-    asId(inv) ||
-    pickString(data, ['_invoiceId', 'invoiceId']);
+  const lytexInvoiceId = asId(inv) || pickString(data, ['_invoiceId', 'invoiceId']);
 
   return {
     externalId,

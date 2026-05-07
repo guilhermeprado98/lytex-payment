@@ -1,0 +1,27 @@
+<div class="page-head page-head-actions">
+  <div class="titles">
+    <h1>Cartões</h1>
+    <p class="lead">Cartões tokenizados na Lytex para pagamentos rápidos.</p>
+  </div>
+  <a mat-flat-button color="primary" routerLink="/cards/new" class="add-btn">
+    <mat-icon>add</mat-icon>
+    Adicionar cartão
+  </a>
+</div>
+
+<mat-card class="list-card">
+  <mat-card-content>
+    <ul class="list">
+      @for (c of savedCards(); track c._id) {
+        <li>
+          <span>{{ cardLabel(c) }}</span>
+          <button mat-icon-button type="button" (click)="remove(c._id)" aria-label="Remover">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </li>
+      } @empty {
+        <p class="empty">Nenhum cartão salvo. Use <strong>Adicionar cartão</strong> para incluir um.</p>
+      }
+    </ul>
+  </mat-card-content>
+</mat-card>

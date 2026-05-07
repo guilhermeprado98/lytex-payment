@@ -1,0 +1,58 @@
+.page-head-row .back {
+  margin-bottom: 0.75rem;
+  padding-left: 0;
+}
+
+.page-head-row .back mat-icon {
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+.form-card {
+  border-radius: 18px !important;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(2, 132, 199, 0.14) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.create-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-top: 0.5rem;
+}
+
+.field {
+  flex: 0 1 auto;
+  min-width: 140px;
+}
+
+.grow {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.narrow {
+  flex: 0 1 120px;
+  min-width: 100px;
+  max-width: 140px;
+}
+
+.actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  /* Alinha a base dos botões com a linha do outline (Material ~48px + label flutuante). */
+  padding-bottom: 1px;
+}
+
+@media (max-width: 719px) {
+  .actions {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+}

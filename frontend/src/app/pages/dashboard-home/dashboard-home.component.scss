@@ -1,0 +1,90 @@
+.muted {
+  color: #64748b;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  box-shadow: 0 12px 32px rgba(3, 105, 161, 0.12) !important;
+}
+
+.stat-card mat-card-content {
+  padding: 1.1rem 1rem !important;
+  text-align: center;
+}
+
+.stat-ico mat-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  opacity: 0.9;
+}
+
+.stat-val {
+  font-size: 1.65rem;
+  font-weight: 800;
+  margin: 0.35rem 0 0.15rem;
+  color: #0f172a;
+}
+
+.stat-lbl {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-card.accent .stat-ico {
+  color: #0284c7;
+}
+.stat-card.warn .stat-ico {
+  color: #f59e0b;
+}
+.stat-card.ok .stat-ico {
+  color: #10b981;
+}
+.stat-card.money .stat-ico {
+  color: #6366f1;
+}
+.stat-card.cardz .stat-ico {
+  color: #0ea5e9;
+}
+
+.panel {
+  margin-bottom: 1.5rem;
+  border-radius: 16px !important;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  background: #e0f2fe;
+  color: #075985;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.quick a mat-icon {
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}

@@ -1,0 +1,65 @@
+<div class="page-head page-head-row">
+  <div>
+    <a mat-button color="primary" routerLink="/transactions" class="back">
+      <mat-icon>arrow_back</mat-icon>
+      Voltar às transações
+    </a>
+    <h1>Nova cobrança</h1>
+    <p class="lead">Integração sandbox Lytex (payment links e cartão).</p>
+  </div>
+</div>
+
+<mat-card class="form-card">
+  <mat-card-content>
+    <form [formGroup]="form" class="create-grid" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+        <mat-label>Valor (R$)</mat-label>
+        <input matInput type="number" step="0.01" min="0.01" formControlName="amount" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+        <mat-label>Meio</mat-label>
+        <mat-select formControlName="method">
+          <mat-option value="PIX">PIX</mat-option>
+          <mat-option value="BOLETO">Boleto</mat-option>
+          <mat-option value="CREDIT_CARD">Cartão</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field grow" subscriptSizing="dynamic">
+        <mat-label>Descrição</mat-label>
+        <input matInput formControlName="description" />
+      </mat-form-field>
+
+      @if (form.controls.method.value === 'CREDIT_CARD') {
+        <mat-form-field appearance="outline" class="field grow" subscriptSizing="dynamic">
+          <mat-label>Cartão salvo (apelido)</mat-label>
+          <mat-select formControlName="savedCardId">
+            @if (cardsLoading()) {
+              <mat-option disabled>Carregando cartões…</mat-option>
+            } @else if (savedCards().length === 0) {
+              <mat-option disabled>Nenhum cartão — cadastre em Cartões</mat-option>
+            } @else {
+              @for (c of savedCards(); track c._id) {
+                <mat-option [value]="c._id">{{ cardOptionLabel(c) }}</mat-option>
+              }
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field narrow" subscriptSizing="dynamic">
+          <mat-label>Parcelas</mat-label>
+          <input matInput type="number" min="1" max="12" formControlName="parcels" />
+        </mat-form-field>
+      }
+
+      <div class="actions">
+        <button mat-stroked-button type="button" color="primary" routerLink="/transactions">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="creating() || form.invalid">
+          @if (creating()) {
+            <mat-spinner diameter="22"></mat-spinner>
+          } @else {
+            Criar Cobrança
+          }
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

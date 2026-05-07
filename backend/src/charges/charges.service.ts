@@ -2,11 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { LytexApiService } from '../lytex/lytex-api.service';
+import { SavedCardsService } from '../saved-cards/saved-cards.service';
 import { Charge, ChargeDocument, ChargeStatus, PaymentMethod } from './schemas/charge.schema';
 import { CreateChargeDto } from './dto/create-charge.dto';
+import { ListChargesQueryDto } from './dto/list-charges-query.dto';
 import { PayCardDto } from './dto/pay-card.dto';
 import { ConfigService } from '@nestjs/config';
-import { extractCardTokenId, extractLytexIds } from './lytex-response.util';
+import { extractCardTokenId, extractLytexIds } from '../common/utils/lytex-response.util';
 
 @Injectable()
 export class ChargesService {
@@ -14,12 +16,16 @@ export class ChargesService {
     @InjectModel(Charge.name) private readonly chargeModel: Model<ChargeDocument>,
     private readonly lytex: LytexApiService,
     private readonly config: ConfigService,
+    private readonly savedCards: SavedCardsService,
   ) {}
 
   async create(userId: string, dto: CreateChargeDto) {
     const totalValueCents = Math.round(dto.amount * 100);
     if (totalValueCents < 1) {
       throw new BadRequestException('Valor inválido');
+    }
+    if (dto.method === PaymentMethod.CREDIT_CARD && !dto.savedCardId?.trim()) {
+      throw new BadRequestException('Selecione um cartão salvo para cobrança com cartão.');
     }
     const website = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4200';
     const description = dto.description?.trim() || 'Cobrança via app';
@@ -44,15 +50,25 @@ export class ChargesService {
       createdBy: new Types.ObjectId(userId),
     });
 
+    if (dto.method === PaymentMethod.CREDIT_CARD && dto.savedCardId) {
+      return this.applyCardPayment(userId, doc, {
+        savedCardId: dto.savedCardId,
+        parcels: dto.parcels ?? 1,
+      });
+    }
+
     return doc.toJSON();
   }
 
-  async listByUser(userId: string) {
-    return this.chargeModel
-      .find({ createdBy: new Types.ObjectId(userId) })
-      .sort({ createdAt: -1 })
-      .lean()
-      .exec();
+  async listByUser(userId: string, query?: ListChargesQueryDto) {
+    const filter: Record<string, unknown> = { createdBy: new Types.ObjectId(userId) };
+    if (query?.status) {
+      filter['status'] = query.status;
+    }
+    if (query?.method) {
+      filter['method'] = query.method;
+    }
+    return this.chargeModel.find(filter).sort({ createdAt: -1 }).lean().exec();
   }
 
   async simulatePay(userId: string, id: string) {
@@ -76,6 +92,10 @@ export class ChargesService {
     if (charge.status !== ChargeStatus.PENDING) {
       throw new BadRequestException('Cobrança já processada');
     }
+    return this.applyCardPayment(userId, charge, dto);
+  }
+
+  private async applyCardPayment(userId: string, charge: ChargeDocument, dto: PayCardDto) {
     const invoiceId = charge.lytexInvoiceId;
     if (!invoiceId) {
       throw new BadRequestException(
@@ -83,16 +103,38 @@ export class ChargesService {
       );
     }
 
-    const tokenRes = await this.lytex.createCardToken({
-      cpfCnpj: dto.cpfCnpj.replace(/\D/g, ''),
-      number: dto.number.replace(/\s/g, ''),
-      holder: dto.holder,
-      expiry: dto.expiry,
-      cvc: dto.cvc,
-    });
-    const cardTokenId = extractCardTokenId(tokenRes);
-    if (!cardTokenId) {
-      throw new BadRequestException('Não foi possível obter o token do cartão na resposta da Lytex');
+    let cardTokenId: string;
+    let holder: string;
+    let cpfDigits: string;
+    let email = dto.email;
+    let cellphone = dto.cellphone;
+    let tokenRes: Record<string, unknown> | undefined;
+
+    if (dto.savedCardId) {
+      const sc = await this.savedCards.getOwnedForPay(userId, dto.savedCardId);
+      cardTokenId = sc.lytexTokenId;
+      holder = sc.holderName;
+      cpfDigits = sc.cpfCnpj;
+      email = dto.email ?? sc.email;
+      cellphone = dto.cellphone ?? sc.cellphone;
+    } else {
+      if (!dto.cpfCnpj || !dto.number || !dto.holder || !dto.expiry || !dto.cvc) {
+        throw new BadRequestException('Informe os dados do cartão ou savedCardId');
+      }
+      tokenRes = (await this.lytex.createCardToken({
+        cpfCnpj: dto.cpfCnpj.replace(/\D/g, ''),
+        number: dto.number.replace(/\s/g, ''),
+        holder: dto.holder,
+        expiry: dto.expiry,
+        cvc: dto.cvc,
+      })) as Record<string, unknown>;
+      const extracted = extractCardTokenId(tokenRes);
+      if (!extracted) {
+        throw new BadRequestException('Não foi possível obter o token do cartão na resposta da Lytex');
+      }
+      cardTokenId = extracted;
+      holder = dto.holder;
+      cpfDigits = dto.cpfCnpj.replace(/\D/g, '');
     }
 
     const payRes = await this.lytex.payInvoice({
@@ -100,11 +142,11 @@ export class ChargesService {
       _cardTokenId: cardTokenId,
       parcels: dto.parcels ?? 1,
       creditCardHolder: {
-        name: dto.holder,
-        type: dto.cpfCnpj.replace(/\D/g, '').length > 11 ? 'pj' : 'pf',
-        cellphone: dto.cellphone ?? '31999999999',
-        email: dto.email ?? 'pagador@example.com',
-        cpfCnpj: dto.cpfCnpj.replace(/\D/g, ''),
+        name: holder,
+        type: cpfDigits.length > 11 ? 'pj' : 'pf',
+        cellphone: cellphone ?? '31999999999',
+        email: email ?? 'pagador@example.com',
+        cpfCnpj: cpfDigits,
         address: {
           street: 'Rua',
           number: 'SN',
@@ -117,7 +159,11 @@ export class ChargesService {
       },
     });
 
-    charge.lytex = { ...(charge.lytex ?? {}), payResponse: payRes, cardTokenResponse: tokenRes };
+    charge.lytex = {
+      ...(charge.lytex ?? {}),
+      payResponse: payRes,
+      ...(tokenRes ? { cardTokenResponse: tokenRes } : {}),
+    };
     charge.status = ChargeStatus.PAID;
     await charge.save();
     return charge.toJSON();

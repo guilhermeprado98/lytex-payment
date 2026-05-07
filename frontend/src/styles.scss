@@ -1,1 +1,85 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --app-bg: linear-gradient(165deg, #dbeafe 0%, #f0f9ff 38%, #e0f2fe 100%);
+  --app-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--app-font);
+  background: var(--app-bg);
+  background-attachment: fixed;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mat-icon,
+mat-icon {
+  font-family: 'Material Icons', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-head h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0c4a6e;
+  letter-spacing: -0.02em;
+}
+
+.page-head .lead {
+  margin: 0 0 1.5rem;
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.mdc-button.mat-primary {
+  --mdc-filled-button-container-color: #0284c7;
+  --mdc-filled-button-label-text-color: #fff;
+}
+
+.mdc-button.mat-mdc-outlined-button.mat-primary {
+  --mdc-outlined-button-label-text-color: #0369a1;
+  --mdc-outlined-button-outline-color: #38bdf8;
+}
+
+.mat-mdc-snack-bar-container {
+  --mat-snack-bar-button-color: #bae6fd;
+}
+
+.app-table {
+  width: 100%;
+}
+
+.app-table th.mat-mdc-header-cell {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #0369a1;
+  background: #f0f9ff;
+  border-bottom: 2px solid #7dd3fc;
+}
+
+.app-table tr.mat-mdc-row:nth-child(even) {
+  background: #f8fafc;
+}
+
+.app-table tr.mat-mdc-row:hover {
+  background: #e0f2fe;
+}

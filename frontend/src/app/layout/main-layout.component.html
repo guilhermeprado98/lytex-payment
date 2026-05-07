@@ -1,0 +1,55 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav
+    class="side"
+    [opened]="menuOpen()"
+    [disableClose]="false"
+    mode="side"
+    [fixedInViewport]="true"
+  >
+    <div class="side-inner">
+    <div class="brand">
+      <span class="brand-mark">L</span>
+      <div class="brand-text">
+        <span class="brand-title">Lytex</span>
+        <span class="brand-sub">Pagamentos</span>
+      </div>
+    </div>
+    <mat-nav-list class="nav">
+      @for (item of nav; track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="nav-active"
+          [routerLinkActiveOptions]="{ exact: item.exact !== false }"
+        >
+          <mat-icon matListItemIcon class="nav-ico">{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+    <div class="side-footer">
+      <span class="hint">Sandbox</span>
+    </div>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="main">
+    <mat-toolbar class="topbar">
+      <button mat-icon-button type="button" class="menu-btn" aria-label="Menu" (click)="toggleMenu()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="topbar-title">Painel</span>
+      <span class="spacer"></span>
+      @if (auth.user(); as u) {
+        <span class="user-pill">{{ u.name }}</span>
+      }
+      <button mat-stroked-button color="primary" type="button" class="logout" (click)="auth.logout()">
+        <mat-icon>logout</mat-icon>
+        Sair
+      </button>
+    </mat-toolbar>
+    <div class="page-scroll">
+      <router-outlet />
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

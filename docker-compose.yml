@@ -20,6 +20,8 @@ services:
       LYTEX_CLIENT_ID: ${LYTEX_CLIENT_ID}
       LYTEX_CLIENT_SECRET: ${LYTEX_CLIENT_SECRET}
       LYTEX_API_BASE: ${LYTEX_API_BASE:-https://sandbox-api-pay.lytex.com.br/v2}
+      LOG_FORMAT: ${LOG_FORMAT:-text}
+      LOG_TO_DB: ${LOG_TO_DB:-true}
     depends_on:
       - mongo
 

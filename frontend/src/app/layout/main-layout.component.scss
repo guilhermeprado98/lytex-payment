@@ -1,0 +1,161 @@
+.shell {
+  min-height: 100vh;
+  background: var(--app-bg);
+}
+
+.side {
+  width: 260px;
+  background: linear-gradient(180deg, #0369a1 0%, #0c4a6e 55%, #082f49 100%);
+  color: #f0f9ff;
+  border: none;
+  box-shadow: 4px 0 24px rgba(2, 132, 199, 0.25);
+}
+
+.side-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brand-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.brand-sub {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.nav {
+  padding-top: 0.5rem;
+  flex: 1;
+  overflow: auto;
+}
+
+.nav a[mat-list-item] {
+  color: #e0f2fe;
+  border-radius: 0 999px 999px 0;
+  margin: 2px 8px 2px 0;
+}
+
+.nav a[mat-list-item]:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-active {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.35), rgba(14, 165, 233, 0.15)) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.nav-ico {
+  color: #7dd3fc;
+}
+
+.nav-active .nav-ico,
+.nav-active {
+  color: #fff !important;
+}
+
+.side-footer {
+  padding: 1rem;
+  margin-top: auto;
+}
+
+.hint {
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(14, 165, 233, 0.15);
+  box-shadow: 0 4px 20px rgba(3, 105, 161, 0.06);
+}
+
+.menu-btn {
+  margin-right: 0.25rem;
+}
+
+.topbar-title {
+  font-weight: 600;
+  color: #0c4a6e;
+  letter-spacing: 0.02em;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.user-pill {
+  margin-right: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.logout {
+  border-radius: 999px !important;
+  font-weight: 600;
+}
+
+.page-scroll {
+  flex: 1;
+  padding: 1.25rem 1.5rem 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .side {
+    width: 220px;
+  }
+
+  .page-scroll {
+    padding: 1rem;
+  }
+}

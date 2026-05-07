@@ -11,9 +11,35 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/register/register.component').then((m) => m.RegisterComponent),
   },
   {
-    path: 'dashboard',
+    path: '',
     canMatch: [authGuard],
-    loadComponent: () => import('./charges/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+    loadComponent: () => import('./layout/main-layout.component').then((m) => m.MainLayoutComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./pages/dashboard-home/dashboard-home.component').then((m) => m.DashboardHomeComponent),
+      },
+      {
+        path: 'transactions/new',
+        loadComponent: () =>
+          import('./pages/charge-create/charge-create.component').then((m) => m.ChargeCreateComponent),
+      },
+      {
+        path: 'transactions',
+        loadComponent: () =>
+          import('./pages/transactions/transactions.component').then((m) => m.TransactionsComponent),
+      },
+      {
+        path: 'cards/new',
+        loadComponent: () => import('./pages/card-add/card-add.component').then((m) => m.CardAddComponent),
+      },
+      {
+        path: 'cards',
+        loadComponent: () => import('./pages/cards/cards.component').then((m) => m.CardsComponent),
+      },
+    ],
   },
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: 'dashboard' },
 ];

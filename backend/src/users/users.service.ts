@@ -25,4 +25,14 @@ export class UsersService {
   async findById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
   }
+
+  /** Lista usuários (dados públicos) para painel interno — em produção restrinja por perfil admin. */
+  async listDirectory() {
+    return this.userModel
+      .find()
+      .select('name email createdAt')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+  }
 }

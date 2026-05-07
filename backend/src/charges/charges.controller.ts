@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ChargesService } from './charges.service';
 import { CreateChargeDto } from './dto/create-charge.dto';
+import { ListChargesQueryDto } from './dto/list-charges-query.dto';
 import { PayCardDto } from './dto/pay-card.dto';
 
 @ApiTags('charges')
@@ -19,8 +20,8 @@ export class ChargesController {
   }
 
   @Get()
-  list(@CurrentUser('userId') userId: string) {
-    return this.charges.listByUser(userId);
+  list(@CurrentUser('userId') userId: string, @Query() query: ListChargesQueryDto) {
+    return this.charges.listByUser(userId, query);
   }
 
   @Patch(':id/pay')

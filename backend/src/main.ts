@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -28,5 +30,9 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
+  const logFormat = process.env.LOG_FORMAT ?? 'text';
+  new Logger('Bootstrap').log(
+    `http://localhost:${port} | Swagger /docs | HTTP logs [HTTP] | LOG_FORMAT=${logFormat} | LOG_TO_DB=${process.env.LOG_TO_DB ?? 'true'}`,
+  );
 }
 bootstrap();
