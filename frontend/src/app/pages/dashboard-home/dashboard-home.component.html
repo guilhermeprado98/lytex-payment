@@ -1,148 +1,78 @@
 <div class="page-head">
-
   <h1>Resumo</h1>
-
   <p class="lead">Visão geral das suas cobranças e cartões salvos.</p>
-
 </div>
 
-
-
 @if (loading()) {
-
   <p class="muted">Carregando…</p>
-
 } @else {
-
   @if (summary(); as s) {
+    <mat-card class="stat-card money stat-volume-hero">
+      <mat-card-content>
+        <div class="stat-ico"><mat-icon>payments</mat-icon></div>
+        <div class="stat-val stat-val--currency">{{ s.charges.volumeTotal | currency: 'BRL' }}</div>
+        <div class="stat-lbl">Volume total</div>
+      </mat-card-content>
+    </mat-card>
 
     <div class="stat-grid">
-
       <mat-card class="stat-card accent">
-
         <mat-card-content>
-
           <div class="stat-ico"><mat-icon>receipt_long</mat-icon></div>
-
           <div class="stat-val">{{ s.charges.total }}</div>
-
           <div class="stat-lbl">Transações</div>
-
         </mat-card-content>
-
       </mat-card>
 
       <mat-card class="stat-card warn">
-
         <mat-card-content>
-
           <div class="stat-ico"><mat-icon>schedule</mat-icon></div>
-
           <div class="stat-val">{{ s.charges.pending }}</div>
-
           <div class="stat-lbl">Pendentes</div>
-
         </mat-card-content>
-
       </mat-card>
 
       <mat-card class="stat-card ok">
-
         <mat-card-content>
-
           <div class="stat-ico"><mat-icon>check_circle</mat-icon></div>
-
           <div class="stat-val">{{ s.charges.paid }}</div>
-
           <div class="stat-lbl">Pagas</div>
-
         </mat-card-content>
-
-      </mat-card>
-
-      <mat-card class="stat-card money">
-
-        <mat-card-content>
-
-          <div class="stat-ico"><mat-icon>payments</mat-icon></div>
-
-          <div class="stat-val">{{ s.charges.volumeTotal | currency: 'BRL' }}</div>
-
-          <div class="stat-lbl">Volume total</div>
-
-        </mat-card-content>
-
       </mat-card>
 
       <mat-card class="stat-card cardz">
-
         <mat-card-content>
-
           <div class="stat-ico"><mat-icon>credit_card</mat-icon></div>
-
           <div class="stat-val">{{ s.savedCards }}</div>
-
           <div class="stat-lbl">Cartões salvos</div>
-
         </mat-card-content>
-
       </mat-card>
-
     </div>
 
-
-
-    @if (s.charges.byMethod?.length) {
-
+    @if (s.charges.byMethod.length > 0) {
       <mat-card class="panel">
-
         <mat-card-header>
-
           <mat-card-title>Por meio de pagamento</mat-card-title>
-
         </mat-card-header>
-
         <mat-card-content>
-
           <div class="chips">
-
             @for (m of s.charges.byMethod; track m.method) {
-
               <span class="chip">{{ m.method }}: <strong>{{ m.count }}</strong></span>
-
             }
-
           </div>
-
         </mat-card-content>
-
       </mat-card>
-
     }
 
-
-
     <div class="quick">
-
       <a mat-flat-button color="primary" routerLink="/transactions/new">
-
         <mat-icon>add_circle</mat-icon>
-
         Nova cobrança
-
       </a>
-
       <a mat-stroked-button color="primary" routerLink="/transactions">Ver transações</a>
-
       <a mat-stroked-button color="primary" routerLink="/cards">Gerir cartões</a>
-
     </div>
-
   } @else {
-
     <p class="muted">Não foi possível carregar o resumo.</p>
-
   }
-
 }
-
