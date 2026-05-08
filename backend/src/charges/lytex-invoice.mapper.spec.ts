@@ -3,6 +3,7 @@ import {
   lytexInvoiceStatusToChargeStatus,
   paymentMethodFromLytexInvoice,
   paymentUrlFromLytexInvoice,
+  resolveLytexInvoiceStatus,
 } from './lytex-invoice.mapper';
 import { ChargeStatus, PaymentMethod } from './schemas/charge.schema';
 
@@ -30,6 +31,24 @@ describe('lytex-invoice.mapper', () => {
 
   it('status canceled -> FAILED', () => {
     expect(lytexInvoiceStatusToChargeStatus(sample['status'])).toBe(ChargeStatus.FAILED);
+  });
+
+  it('status pago (pt-BR) -> PAID', () => {
+    expect(lytexInvoiceStatusToChargeStatus('Pago')).toBe(ChargeStatus.PAID);
+    expect(lytexInvoiceStatusToChargeStatus('liquidado')).toBe(ChargeStatus.PAID);
+  });
+
+  it('status em objeto aninhado', () => {
+    expect(lytexInvoiceStatusToChargeStatus({ code: 'pago' })).toBe(ChargeStatus.PAID);
+  });
+
+  it('resolveLytexInvoiceStatus: payment.status pago vence status raiz pendente', () => {
+    const inv = {
+      status: 'pending',
+      payment: { status: 'paid' },
+    } as Record<string, unknown>;
+    expect(resolveLytexInvoiceStatus(inv)).toBe('paid');
+    expect(lytexInvoiceStatusToChargeStatus(resolveLytexInvoiceStatus(inv))).toBe(ChargeStatus.PAID);
   });
 
   it('method from list', () => {

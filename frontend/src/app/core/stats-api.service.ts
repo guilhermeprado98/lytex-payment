@@ -10,6 +10,7 @@ export interface StatsSummary {
     paid: number;
     failed: number;
     volumeTotal: number;
+    volumePaid: number;
     byMethod: { method: string; count: number }[];
   };
   savedCards: number;

@@ -7,13 +7,25 @@
   <p class="muted">Carregando…</p>
 } @else {
   @if (summary(); as s) {
-    <mat-card class="stat-card money stat-volume-hero">
-      <mat-card-content>
-        <div class="stat-ico"><mat-icon>payments</mat-icon></div>
-        <div class="stat-val stat-val--currency">{{ s.charges.volumeTotal | currency: 'BRL' }}</div>
-        <div class="stat-lbl">Volume total</div>
-      </mat-card-content>
-    </mat-card>
+    <div class="stat-volume-row">
+      <mat-card class="stat-card money stat-volume-hero">
+        <mat-card-content>
+          <div class="stat-ico"><mat-icon>payments</mat-icon></div>
+          <div class="stat-val stat-val--currency">{{ s.charges.volumeTotal | currency: 'BRL' }}</div>
+          <div class="stat-lbl">Volume total</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="stat-card money stat-volume-hero stat-volume-hero--paid">
+        <mat-card-content>
+          <div class="stat-ico"><mat-icon>check_circle</mat-icon></div>
+          <div class="stat-val stat-val--currency">
+            {{ (s.charges.volumePaid ?? 0) | currency: 'BRL' }}
+          </div>
+          <div class="stat-lbl">Total pago</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
 
     <div class="stat-grid">
       <mat-card class="stat-card accent">

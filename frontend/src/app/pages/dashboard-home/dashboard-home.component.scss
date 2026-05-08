@@ -9,8 +9,15 @@
   margin-bottom: 1.5rem;
 }
 
-.stat-volume-hero {
+.stat-volume-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
   margin-bottom: 1.25rem;
+}
+
+.stat-volume-hero {
+  margin-bottom: 0;
   border-radius: 20px !important;
   border: 1px solid rgba(99, 102, 241, 0.35);
   background: linear-gradient(145deg, #eef2ff 0%, #e0e7ff 45%, #faf5ff 100%);
@@ -54,6 +61,20 @@
   color: #4338ca;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.stat-volume-hero--paid {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 45%, #f0fdf4 100%);
+  box-shadow: 0 16px 40px rgba(5, 150, 105, 0.16) !important;
+}
+
+.stat-volume-hero--paid .stat-ico mat-icon {
+  color: #059669;
+}
+
+.stat-volume-hero--paid .stat-lbl {
+  color: #047857;
 }
 
 .stat-card {

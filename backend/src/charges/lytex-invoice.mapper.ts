@@ -1,10 +1,55 @@
 import { ChargeStatus, PaymentMethod } from './schemas/charge.schema';
 
+function pushStatusScalar(out: string[], v: unknown) {
+  if (v == null) return;
+  if (typeof v === 'string' && v.trim()) {
+    out.push(v.trim());
+    return;
+  }
+  if (typeof v === 'number' && Number.isFinite(v)) {
+    out.push(String(v));
+  }
+}
+
 export function lytexInvoiceStatusToChargeStatus(status: unknown): ChargeStatus {
-  const v = String(status ?? '')
-    .toLowerCase()
-    .trim();
-  if (['paid', 'payed', 'liquidated', 'settled', 'confirmed', 'completed'].includes(v)) {
+  let v = '';
+  if (typeof status === 'string') {
+    v = status.toLowerCase().trim();
+  } else if (status && typeof status === 'object') {
+    const o = status as Record<string, unknown>;
+    const inner = o['status'] ?? o['code'] ?? o['name'] ?? o['state'];
+    v = String(inner ?? '').toLowerCase().trim();
+  } else {
+    v = String(status ?? '')
+      .toLowerCase()
+      .trim();
+  }
+  if (
+    [
+      'paid',
+      'payed',
+      'pago',
+      'paga',
+      'pagos',
+      'pagas',
+      'liquidated',
+      'liquidado',
+      'liquidada',
+      'settled',
+      'confirmed',
+      'confirmado',
+      'confirmada',
+      'completed',
+      'concluido',
+      'concluída',
+      'concluida',
+      'quitado',
+      'quitada',
+      'received',
+      'recebido',
+      'recebida',
+    ].includes(v)
+  ) {
     return ChargeStatus.PAID;
   }
   if (
@@ -15,6 +60,44 @@ export function lytexInvoiceStatusToChargeStatus(status: unknown): ChargeStatus 
     return ChargeStatus.FAILED;
   }
   return ChargeStatus.PENDING;
+}
+
+/**
+ * A Lytex nem sempre envia o estado da fatura em `status` na raiz.
+ * Objetos aninhados (ex.: `payment.status`) costumam refletir o pagamento; preferimos esses
+ * e, entre vários valores, um que mapeie para PAID ou FAILED ganha prioridade.
+ */
+export function resolveLytexInvoiceStatus(inv: Record<string, unknown>): unknown {
+  const found: string[] = [];
+
+  for (const key of ['payment', 'payInfo', 'paymentInfo', 'billing', 'lastPayment', 'transaction']) {
+    const nested = inv[key];
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      const n = nested as Record<string, unknown>;
+      pushStatusScalar(found, n['status']);
+      pushStatusScalar(found, n['state']);
+      pushStatusScalar(found, n['paymentStatus']);
+      pushStatusScalar(found, n['situation']);
+    }
+  }
+
+  pushStatusScalar(found, inv['invoiceStatus']);
+  pushStatusScalar(found, inv['paymentStatus']);
+  pushStatusScalar(found, inv['situation']);
+  pushStatusScalar(found, inv['situationInvoice']);
+  pushStatusScalar(found, inv['status']);
+
+  for (const s of found) {
+    if (lytexInvoiceStatusToChargeStatus(s) === ChargeStatus.PAID) {
+      return s;
+    }
+  }
+  for (const s of found) {
+    if (lytexInvoiceStatusToChargeStatus(s) === ChargeStatus.FAILED) {
+      return s;
+    }
+  }
+  return found[0] ?? inv['status'];
 }
 
 export function paymentMethodFromLytexInvoice(inv: Record<string, unknown>): PaymentMethod {

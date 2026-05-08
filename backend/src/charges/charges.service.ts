@@ -13,6 +13,7 @@ import {
   lytexInvoiceStatusToChargeStatus,
   paymentMethodFromLytexInvoice,
   paymentUrlFromLytexInvoice,
+  resolveLytexInvoiceStatus,
 } from './lytex-invoice.mapper';
 
 @Injectable()
@@ -117,7 +118,7 @@ export class ChargesService {
           $set: {
             amount,
             method: paymentMethodFromLytexInvoice(row),
-            status: lytexInvoiceStatusToChargeStatus(row['status']),
+            status: lytexInvoiceStatusToChargeStatus(resolveLytexInvoiceStatus(row)),
             paymentUrl: paymentUrlFromLytexInvoice(row),
             externalId: id,
             lytex: row,
