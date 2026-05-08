@@ -45,3 +45,5 @@ Testes realizados nos services API Lytex, autenticação e cobranças (charges);
 ## Documentação SWAGGER
 
 Para acessar o swagger, colocar a rota /docs no backend. (Exemplo: http://localhost:3000/docs).
+
+Observação: para consumir a API, é necessário realizar a autenticação pelo endpoint /auth/login para obter o access token e passar o mesmo no Authorization.
