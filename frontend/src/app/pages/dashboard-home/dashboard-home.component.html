@@ -20,7 +20,7 @@
         <mat-card-content>
           <div class="stat-ico"><mat-icon>check_circle</mat-icon></div>
           <div class="stat-val stat-val--currency">
-            {{ (s.charges.volumePaid ?? 0) | currency: 'BRL' }}
+            {{ s.charges.volumePaid | currency: 'BRL' }}
           </div>
           <div class="stat-lbl">Total pago</div>
         </mat-card-content>
