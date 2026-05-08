@@ -81,6 +81,22 @@ describe('ChargesService', () => {
     expect(res).toEqual({ id: 'c-card', status: ChargeStatus.PAID });
   });
 
+  it('create com CREDIT_CARD sem savedCardId só persiste (sem pagar)', async () => {
+    lytex.createPaymentLink.mockResolvedValue({ _id: 'ext-1', url: 'https://pay' });
+    model.create.mockResolvedValue({ toJSON: () => ({ id: 'c-pend', status: ChargeStatus.PENDING }) });
+    const uid = new Types.ObjectId().toString();
+    const res = await service.create(uid, {
+      amount: 20,
+      method: PaymentMethod.CREDIT_CARD,
+      description: 'Só link',
+    });
+    expect(lytex.createPaymentLink).toHaveBeenCalled();
+    expect(model.create).toHaveBeenCalled();
+    expect(savedCards.getOwnedForPay).not.toHaveBeenCalled();
+    expect(lytex.payInvoice).not.toHaveBeenCalled();
+    expect(res).toEqual({ id: 'c-pend', status: ChargeStatus.PENDING });
+  });
+
   it('simulatePay marca como PAID', async () => {
     const charge = {
       status: ChargeStatus.PENDING,

@@ -5,7 +5,7 @@
       Voltar às transações
     </a>
     <h1>Nova cobrança</h1>
-    <p class="lead">Integração sandbox Lytex (POST /v2/invoices e cartão).</p>
+    <p class="lead">Integração sandbox Lytex (POST /v2/invoices). Cartão gera o link; pagamento opcional com cartão salvo.</p>
   </div>
 </div>
 
@@ -56,20 +56,22 @@
       </mat-form-field>
 
       @if (form.controls.method.value === 'CREDIT_CARD') {
-        <mat-form-field appearance="outline" class="field grow" subscriptSizing="dynamic">
-          <mat-label>Cartão salvo (apelido)</mat-label>
-          <mat-select formControlName="savedCardId">
-            @if (cardsLoading()) {
-              <mat-option disabled>Carregando cartões…</mat-option>
-            } @else if (savedCards().length === 0) {
-              <mat-option disabled>Nenhum cartão — cadastre em Cartões</mat-option>
-            } @else {
-              @for (c of savedCards(); track c._id) {
-                <mat-option [value]="c._id">{{ cardOptionLabel(c) }}</mat-option>
+        @if (savedCards().length > 0) {
+          <mat-form-field appearance="outline" class="field grow" subscriptSizing="dynamic">
+            <mat-label>Pagar já com cartão salvo (opcional)</mat-label>
+            <mat-select formControlName="savedCardId">
+              <mat-option value="">Só gerar cobrança (link)</mat-option>
+              @if (cardsLoading()) {
+                <mat-option disabled>Carregando cartões…</mat-option>
+              } @else {
+                @for (c of savedCards(); track c._id) {
+                  <mat-option [value]="c._id">{{ cardOptionLabel(c) }}</mat-option>
+                }
               }
-            }
-          </mat-select>
-        </mat-form-field>
+            </mat-select>
+          </mat-form-field>
+        }
+
         <mat-form-field appearance="outline" class="field narrow" subscriptSizing="dynamic">
           <mat-label>Parcelas</mat-label>
           <input matInput type="number" min="1" max="12" formControlName="parcels" />

@@ -47,15 +47,36 @@ export function paymentMethodFromLytexInvoice(inv: Record<string, unknown>): Pay
   return PaymentMethod.BOLETO;
 }
 
+/** Aceita number ou string numérica (API às vezes serializa assim). */
+function positiveCents(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
+    return Math.round(v);
+  }
+  if (typeof v === 'string' && v.trim()) {
+    const n = Number(v.replace(',', '.'));
+    if (Number.isFinite(n) && n > 0) {
+      return Math.round(n);
+    }
+  }
+  return null;
+}
+
 /** totalValue e itens[].value na Lytex v2 costumam estar em centavos. */
 export function amountReaisFromLytexInvoice(inv: Record<string, unknown>): number {
-  const tv = inv['totalValue'];
-  if (typeof tv === 'number' && tv > 0) {
-    return Math.round(tv) / 100;
+  const tv = positiveCents(inv['totalValue']);
+  if (tv !== null) {
+    return tv / 100;
   }
-  const items = inv['items'] as Array<{ quantity?: number; value?: number }> | undefined;
+  const items = inv['items'] as Array<{ quantity?: unknown; value?: unknown }> | undefined;
   if (Array.isArray(items) && items.length > 0) {
-    const cents = items.reduce((acc, it) => acc + (it.quantity ?? 1) * (it.value ?? 0), 0);
+    let cents = 0;
+    for (const it of items) {
+      const q = positiveCents(it.quantity) ?? 1;
+      const val = positiveCents(it.value);
+      if (val !== null) {
+        cents += q * val;
+      }
+    }
     if (cents > 0) {
       return cents / 100;
     }

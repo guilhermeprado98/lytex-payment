@@ -24,6 +24,10 @@ describe('lytex-invoice.mapper', () => {
     expect(amountReaisFromLytexInvoice(sample)).toBe(200);
   });
 
+  it('amount from totalValue string', () => {
+    expect(amountReaisFromLytexInvoice({ ...sample, totalValue: '20000' })).toBe(200);
+  });
+
   it('status canceled -> FAILED', () => {
     expect(lytexInvoiceStatusToChargeStatus(sample['status'])).toBe(ChargeStatus.FAILED);
   });

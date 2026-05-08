@@ -28,9 +28,6 @@ export class ChargesService {
     if (amountReais < 0.01) {
       throw new BadRequestException('Valor inválido');
     }
-    if (dto.method === PaymentMethod.CREDIT_CARD && !dto.savedCardId?.trim()) {
-      throw new BadRequestException('Selecione um cartão salvo para cobrança com cartão.');
-    }
     const description = dto.description?.trim() || 'Cobrança via app';
 
     const lytexData = await this.lytex.createPaymentLink({
@@ -65,10 +62,12 @@ export class ChargesService {
       createdBy: new Types.ObjectId(userId),
     });
 
-    if (dto.method === PaymentMethod.CREDIT_CARD && dto.savedCardId) {
+    if (dto.method === PaymentMethod.CREDIT_CARD && dto.savedCardId?.trim()) {
       return this.applyCardPayment(userId, doc, {
         savedCardId: dto.savedCardId,
         parcels: dto.parcels ?? 1,
+        email: dto.payerEmail,
+        cellphone: dto.payerCellphone,
       });
     }
 

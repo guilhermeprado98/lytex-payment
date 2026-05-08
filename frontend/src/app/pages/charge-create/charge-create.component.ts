@@ -67,8 +67,8 @@ export class ChargeCreateComponent {
   });
 
   constructor() {
-    this.syncCardValidators(this.form.controls.method.value);
-    this.form.controls.method.valueChanges.subscribe((m) => this.syncCardValidators(m));
+    this.syncCardFields(this.form.controls.method.value);
+    this.form.controls.method.valueChanges.subscribe((m) => this.syncCardFields(m));
   }
 
   cardOptionLabel(c: SavedCard): string {
@@ -81,16 +81,12 @@ export class ChargeCreateComponent {
     return `${b}${tail} — ${c.holderName}`;
   }
 
-  private syncCardValidators(method: 'PIX' | 'BOLETO' | 'CREDIT_CARD'): void {
-    const sid = this.form.controls.savedCardId;
-    if (method === 'CREDIT_CARD') {
-      sid.setValidators([Validators.required]);
-      this.loadSavedCards();
-    } else {
-      sid.clearValidators();
-      sid.setValue('');
+  private syncCardFields(method: 'PIX' | 'BOLETO' | 'CREDIT_CARD'): void {
+    if (method !== 'CREDIT_CARD') {
+      this.form.controls.savedCardId.setValue('');
+      return;
     }
-    sid.updateValueAndValidity({ emitEvent: false });
+    this.loadSavedCards();
   }
 
   private loadSavedCards(): void {
@@ -113,10 +109,6 @@ export class ChargeCreateComponent {
       return;
     }
     const v = this.form.getRawValue();
-    if (v.method === 'CREDIT_CARD' && this.savedCards().length === 0) {
-      this.snack.open('Cadastre um cartão antes de criar cobrança no cartão.', 'Fechar', { duration: 5000 });
-      return;
-    }
     this.creating.set(true);
     const body: {
       amount: number;
@@ -141,15 +133,17 @@ export class ChargeCreateComponent {
     const cell = v.payerCellphone?.replace(/\D/g, '');
     if (cell && cell.length >= 10) body.payerCellphone = cell;
     if (v.method === 'CREDIT_CARD') {
-      body.savedCardId = v.savedCardId;
       body.parcels = Number(v.parcels) || 1;
+      const sid = v.savedCardId?.trim();
+      if (sid) body.savedCardId = sid;
     }
     this.api
       .create(body)
       .pipe(finalize(() => this.creating.set(false)))
       .subscribe({
         next: () => {
-          const msg = v.method === 'CREDIT_CARD' ? 'Cobrança paga com cartão salvo' : 'Cobrança criada na Lytex';
+          const paidNow = v.method === 'CREDIT_CARD' && !!v.savedCardId?.trim();
+          const msg = paidNow ? 'Cobrança criada e paga com cartão na Lytex' : 'Cobrança criada na Lytex';
           this.snack.open(msg, 'OK', { duration: 3000 });
           void this.router.navigateByUrl('/transactions');
         },

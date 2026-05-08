@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
@@ -131,7 +131,10 @@ export class LytexApiService {
     try {
       const { data } = await firstValueFrom(
         this.http.get<Record<string, unknown>>(url, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
           params: { page, perPage },
         }),
       );
@@ -316,7 +319,7 @@ export class LytexApiService {
     };
   }
 
-  private mapAxios(err: unknown, fallback: string): BadRequestException {
+  private mapAxios(err: unknown, fallback: string): HttpException {
     if (err instanceof AxiosError) {
       const data = err.response?.data;
       let msg: string | undefined;
@@ -339,8 +342,14 @@ export class LytexApiService {
       if (!msg) {
         msg = err.message;
       }
-      return new BadRequestException(`${fallback}: ${msg}`);
+      const status =
+        typeof err.response?.status === 'number' &&
+        err.response.status >= 400 &&
+        err.response.status < 600
+          ? err.response.status
+          : HttpStatus.BAD_GATEWAY;
+      return new HttpException(`${fallback}: ${msg}`, status);
     }
-    return new BadRequestException(fallback);
+    return new HttpException(fallback, HttpStatus.BAD_GATEWAY);
   }
 }

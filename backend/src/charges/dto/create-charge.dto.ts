@@ -45,9 +45,12 @@ export class CreateChargeDto {
   description?: string;
 
   @ApiPropertyOptional({
-    description: 'Obrigatório quando method=CREDIT_CARD: ID do cartão salvo (GET /saved-cards).',
+    description:
+      'ID do cartão salvo (GET /saved-cards). Opcional: com CREDIT_CARD, se enviado, a cobrança é paga na sequência com esse cartão.',
   })
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' && value.trim() ? value.trim() : undefined))
+  @ValidateIf((o) => !!o.savedCardId)
   @IsMongoId()
   savedCardId?: string;
 

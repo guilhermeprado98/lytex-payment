@@ -68,7 +68,18 @@
 }
 
 .nav a[mat-list-item]:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.nav a[mat-list-item]:hover .mat-mdc-list-item-title,
+.nav a[mat-list-item]:hover .mdc-list-item__primary-text {
+  color: #fff !important;
+}
+
+.nav a[mat-list-item]:hover mat-icon,
+.nav a[mat-list-item]:hover .nav-ico {
+  color: #fff !important;
 }
 
 .nav-active {
@@ -77,12 +88,17 @@
   font-weight: 600;
 }
 
+.nav-active .mat-mdc-list-item-title,
+.nav-active .mdc-list-item__primary-text {
+  color: #fff !important;
+}
+
 .nav-ico {
   color: #7dd3fc;
 }
 
 .nav-active .nav-ico,
-.nav-active {
+.nav-active mat-icon {
   color: #fff !important;
 }
 
