@@ -1,0 +1,291 @@
+{
+  "info": {
+    "name": "Lytex Payment API",
+    "description": "API NestJS do projeto lytex-payment (auth JWT, cobranças Lytex, cartões salvos, estatísticas). Ajuste `baseUrl` se a API não estiver em localhost:3000. Após **Login**, o token é guardado na variável `accessToken`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "chargeId", "value": "" },
+    { "key": "savedCardId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuário Teste\",\n  \"email\": \"teste@exemplo.com\",\n  \"password\": \"senha123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Cria usuário. Resposta inclui `accessToken` e `user`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code)) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.accessToken) pm.collectionVariables.set('accessToken', j.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teste@exemplo.com\",\n  \"password\": \"senha123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Autentica e devolve JWT. O script guarda `accessToken` para as rotas protegidas."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.accessToken) pm.collectionVariables.set('accessToken', j.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Charges",
+      "description": "Todas as rotas exigem header Authorization: Bearer {{accessToken}}",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "List charges",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/charges",
+            "description": "Lista cobranças do utilizador autenticado."
+          }
+        },
+        {
+          "name": "List charges (filtros)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/charges?status=PAID&method=PIX",
+            "description": "Query opcionais: status=PENDING|PAID|FAILED, method=PIX|BOLETO|CREDIT_CARD"
+          }
+        },
+        {
+          "name": "Create charge (PIX)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 49.9,\n  \"method\": \"PIX\",\n  \"description\": \"Teste Postman\",\n  \"payerCpfCnpj\": \"12345678901\",\n  \"payerName\": \"Pagador Teste\",\n  \"payerEmail\": \"pagador@exemplo.com\",\n  \"payerCellphone\": \"11999999999\"\n}"
+            },
+            "url": "{{baseUrl}}/charges",
+            "description": "Cria link/cobrança na Lytex. Campos do pagador são opcionais conforme env LYTEX_INVOICE_*."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code)) {",
+                  "  const j = pm.response.json();",
+                  "  const id = j.id || j._id;",
+                  "  if (id) pm.collectionVariables.set('chargeId', String(id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create charge (BOLETO)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25.5,\n  \"method\": \"BOLETO\",\n  \"description\": \"Boleto Postman\",\n  \"payerCpfCnpj\": \"12345678901\",\n  \"payerName\": \"Pagador Teste\",\n  \"payerEmail\": \"pagador@exemplo.com\"\n}"
+            },
+            "url": "{{baseUrl}}/charges"
+          }
+        },
+        {
+          "name": "Create charge (CREDIT_CARD link)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100,\n  \"method\": \"CREDIT_CARD\",\n  \"parcels\": 1,\n  \"description\": \"Cartão Postman\",\n  \"payerCpfCnpj\": \"12345678901\",\n  \"payerName\": \"Pagador Teste\",\n  \"payerEmail\": \"pagador@exemplo.com\"\n}"
+            },
+            "url": "{{baseUrl}}/charges",
+            "description": "Sem `savedCardId`: apenas cria o link de pagamento. Com `savedCardId` válido, tenta pagar na hora."
+          }
+        },
+        {
+          "name": "Sync from Lytex",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/charges/sync-from-lytex",
+            "description": "GET /v2/invoices na Lytex (todas as páginas) e upsert local."
+          }
+        },
+        {
+          "name": "Simulate pay (PIX/Boleto)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/charges/{{chargeId}}/pay",
+            "description": "Apenas PENDING e não cartão. Substitua `chargeId` na collection ou crie uma cobrança PIX antes."
+          }
+        },
+        {
+          "name": "Pay with card",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"savedCardId\": \"{{savedCardId}}\",\n  \"email\": \"pagador@exemplo.com\",\n  \"cellphone\": \"11999999999\",\n  \"parcels\": 1\n}"
+            },
+            "url": "{{baseUrl}}/charges/{{chargeId}}/pay-card",
+            "description": "Ou omita savedCardId e envie cpfCnpj, number, holder, expiry, cvc."
+          }
+        },
+        {
+          "name": "Pay with card (dados completos)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpfCnpj\": \"12345678901\",\n  \"number\": \"4111111111111111\",\n  \"holder\": \"TESTE T SILVA\",\n  \"expiry\": \"1228\",\n  \"cvc\": \"123\",\n  \"email\": \"pagador@exemplo.com\",\n  \"cellphone\": \"11999999999\",\n  \"parcels\": 1\n}"
+            },
+            "url": "{{baseUrl}}/charges/{{chargeId}}/pay-card",
+            "description": "Use número de cartão de teste conforme documentação Lytex."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stats",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/stats/summary",
+            "description": "Resumo: totais, volume, volume pago, por meio, cartões salvos."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saved cards",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "List saved cards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/saved-cards"
+          }
+        },
+        {
+          "name": "Save card",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpfCnpj\": \"12345678901\",\n  \"number\": \"4111111111111111\",\n  \"holder\": \"TESTE T SILVA\",\n  \"expiry\": \"1228\",\n  \"cvc\": \"123\",\n  \"email\": \"titular@exemplo.com\",\n  \"cellphone\": \"11988887777\",\n  \"label\": \"Cartão teste\"\n}"
+            },
+            "url": "{{baseUrl}}/saved-cards",
+            "description": "Tokeniza na Lytex e grava referência local."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code)) {",
+                  "  const j = pm.response.json();",
+                  "  const id = j.id || j._id;",
+                  "  if (id) pm.collectionVariables.set('savedCardId', String(id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete saved card",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/saved-cards/{{savedCardId}}",
+            "description": "204 sem corpo. Preencha `savedCardId` ou use **Save card** antes."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "List directory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users",
+            "description": "Lista de utilizadores (directório) — conforme implementação do serviço."
+          }
+        }
+      ]
+    }
+  ]
+}

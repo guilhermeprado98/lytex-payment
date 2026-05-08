@@ -11,7 +11,7 @@ Documentação oficial da API: [docs-pay.lytex.com.br](https://docs-pay.lytex.co
 
 ### Rodar com Docker Compose (API + Mongo)
 
-1. Na raiz do repositório, copie `.env.example` para `.env` e preencha `LYTEX_CLIENT_ID` e `LYTEX_CLIENT_SECRET` do painel sandbox.
+1. Na raiz do repositório, copie `.env.example` para `.env` e preencha `LYTEX_CLIENT_ID` e `LYTEX_CLIENT_SECRET` do painel sandbox. Também é necessário preencher JWT_SECRET, e o mesmo também tem de ser preenchido no docker-compose.yml
 2. Execute: `docker compose up --build`
 3. API: `http://localhost:3000` · Swagger: `http://localhost:3000/docs`
 4. Suba o frontend localmente (abaixo), apontando para a API em `http://localhost:3000` (`frontend/src/environments/environment.ts`).
